@@ -1,0 +1,267 @@
+{
+  "info": {
+    "name": "Merge Fruit API",
+    "description": "Spring Boot backend for the Merge Fruit game.\n\n## Setup\n1. Import this collection and `local.postman_environment.json`\n2. Select the **Merge Fruit — Local** environment\n3. Start the backend: `./run-dev.sh`\n4. Run **Sign Up** or **Login** — the access token is saved automatically\n5. Use the Scores requests (POST requires a JSON body)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "scoreId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sign Up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "    pm.environment.set('accessToken', body.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"player@example.com\",\n  \"password\": \"your-password-here\",\n  \"displayName\": \"Player1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signup"]
+            },
+            "description": "Register a new user. Returns JWT access token (201 Created).\n\nPassword must be at least 8 characters."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "    pm.environment.set('accessToken', body.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"player@example.com\",\n  \"password\": \"your-password-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticate and receive a JWT. Token is saved to `accessToken` for other requests."
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints. Login/Sign Up save the JWT to `{{accessToken}}`."
+    },
+    {
+      "name": "Scores",
+      "item": [
+        {
+          "name": "Get Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scores?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scores"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Items per page (max 100)"
+                }
+              ]
+            },
+            "description": "Public endpoint — no auth required. Returns paginated leaderboard."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Score",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.leaderboard && body.leaderboard.length > 0) {",
+                  "        pm.collectionVariables.set('scoreId', body.leaderboard[0].id);",
+                  "        pm.environment.set('scoreId', body.leaderboard[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Player1\",\n  \"score\": 4200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scores"]
+            },
+            "description": "Submit a new score. **Requires JSON body** — do not send an empty POST.\n\nWorks without auth (anonymous scores). Optional: add Authorization header if logged in."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Score (authenticated)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Player1\",\n  \"score\": 8500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scores"]
+            },
+            "description": "Same as Submit Score, but links the score to your logged-in user. Run Login first."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Score (TODO — student exercise)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"UpdatedName\",\n  \"score\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scores/{{scoreId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scores", "{{scoreId}}"]
+            },
+            "description": "Your exercise: implement PUT /api/scores/{id} in ScoreController + ScoreService."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Score (TODO — student exercise)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scores/{{scoreId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scores", "{{scoreId}}"]
+            },
+            "description": "Your exercise: implement DELETE /api/scores/{id}. Expect 204 No Content on success."
+          },
+          "response": []
+        }
+      ],
+      "description": "Leaderboard API — mirrors the React app's Netlify function."
+    }
+  ]
+}

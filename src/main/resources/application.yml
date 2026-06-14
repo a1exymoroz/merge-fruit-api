@@ -1,0 +1,56 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: merge-fruit-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mergefruit}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      # Connection pooling — reuses DB connections instead of opening one per request.
+      # Why: prevents exhausting PostgreSQL's max_connections under load.
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          # Caps rows fetched per query batch — protects memory on large result sets.
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  servlet:
+    multipart:
+      max-file-size: 1KB
+      max-request-size: 2KB
+
+server:
+  # Reject oversized HTTP headers — basic protection against malformed requests.
+  max-http-request-header-size: 8KB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 3600000
+  anonymous-user:
+    password: ${ANONYMOUS_USER_PASSWORD}
+  cors:
+    allowed-origins: http://localhost:5173
+  rate-limit:
+    requests-per-minute: 60
+  scores:
+    max-leaderboard-size: 100
+    max-display-name-length: 20
+
+logging:
+  level:
+    org.springframework.security: INFO

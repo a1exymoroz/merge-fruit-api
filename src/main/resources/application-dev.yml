@@ -1,0 +1,10 @@
+# Activate with: SPRING_PROFILES_ACTIVE=dev
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
