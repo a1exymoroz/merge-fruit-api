@@ -69,10 +69,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/scores").permitAll()
-                        // TODO (Student): Decide if POST /api/scores should require auth.
-                        // Hint: your React game currently submits scores anonymously via Netlify.
-                        .requestMatchers(HttpMethod.POST, "/api/scores").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

@@ -2,19 +2,47 @@
 
 Spring Boot backend for your React Merge Fruit game. This is a **50/50 learning setup**: about half is implemented as reference code; the rest is left for you with `TODO (Student)` comments.
 
-## Quick start
+## Quick start (local)
+
+The API always runs via **`./run-dev.sh`** (Maven) — not the Render Docker image. Only the **database** setup differs: local Docker Postgres, or a remote DB (Neon) with no Docker.
+
+Create **`.env.local`** first (see [Environment variables](#environment-variables) below).
+
+| | **With Docker** | **Without Docker** |
+|---|-----------------|---------------------|
+| Database | Postgres in a container on `localhost:5432` | Neon (cloud) — no Colima/Docker needed |
+| Config file | `.env.local` | `.env.prod` |
+| Spring profile | `dev` (via `./run-dev.sh`) | `prod` |
+
+---
+
+### Option A — With Docker (local Postgres)
+
+Uses `docker-compose.yml` — Postgres + Adminer on your machine.
 
 ```bash
-# 1. Create local secrets file (gitignored — never commit .env.local or .env.prod)
-#    See "Environment variables" below for what to put in the file.
-
-# 2. Load env vars (needed for Docker)
-set -a && source .env.local && set +a
-
-# 3. Start Docker (Colima on macOS)
+# 1. Start Docker (Colima on macOS)
 colima start
 
-# 4. Start PostgreSQL (credentials from .env.local)
+# 2. Load secrets and start Postgres + Adminer
+set -a && source .env.local && set +a
+docker-compose up -d
+
+# 3. Run the API
+chmod +x run-dev.sh
+./run-dev.sh
+```
+
+| Service | URL |
+|---------|-----|
+| API | http://localhost:8080 |
+| Adminer (DB UI) | http://localhost:8081 |
+
+**Alternative — single `docker run` container** (no Compose):
+
+```bash
+set -a && source .env.local && set +a
+
 docker run -d --name mergefruit-db \
   -e POSTGRES_DB="$DB_NAME" \
   -e POSTGRES_USER="$DB_USER" \
@@ -22,16 +50,68 @@ docker run -d --name mergefruit-db \
   -p "${DB_PORT}:5432" \
   postgres:16-alpine
 
-# 5. Run the API — dev profile loads .env.local and creates tables
-chmod +x run-dev.sh
 ./run-dev.sh
 ```
+
+For Adminer with this setup: `chmod +x start-db-ui.sh && ./start-db-ui.sh` → http://localhost:8081 (Server: `mergefruit-db`).
+
+**Docker commands (Compose):**
+
+```bash
+set -a && source .env.local && set +a
+docker-compose up -d      # start
+docker-compose down       # stop (data kept in volume)
+docker ps                 # check containers
+docker-compose logs postgres
+```
+
+> **Note:** Use `docker-compose` (with a hyphen). If your install has the Compose plugin, `docker compose` (space) works too — if you see `'compose' is not a docker command`, use `docker-compose`.
+
+---
+
+### Option B — Without Docker (Neon / remote DB)
+
+Use your **Neon** database from the machine — same DB as Render, no local Postgres.
+
+```bash
+# 1. Load production env (Neon credentials)
+set -a && source .env.prod && set +a
+
+# 2. Run API against Neon (prod profile + Flyway validate)
+export SPRING_PROFILES_ACTIVE=prod
+mvn spring-boot:run
+```
+
+Or in one line:
+
+```bash
+set -a && source .env.prod && set +a && SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
+```
+
+| Service | URL |
+|---------|-----|
+| API | http://localhost:8080 |
+| DB UI | [Neon Console](https://console.neon.tech) → SQL Editor |
+
+> Tables already exist on Neon from your Render deploy. Flyway will not re-run `V1__init.sql` if it was applied before.
+
+**Without Docker and without Neon?** Install Postgres locally (e.g. `brew install postgresql@16`), create a database matching `.env.local`, then use **Option A** steps 3+ but skip Docker — run `./run-dev.sh` only.
+
+---
+
+### What runs where
+
+| | **Local (Docker)** | **Local (no Docker)** | **Render (production)** |
+|---|-------------------|----------------------|-------------------------|
+| API | `./run-dev.sh` | `mvn spring-boot:run` + `.env.prod` | Docker container |
+| Database | Docker Postgres | Neon | Neon |
+| Config | `.env.local`, `dev` | `.env.prod`, `prod` | `.env.prod`, `prod` |
 
 ## Environment variables
 
 Create **`.env.local`** for local development and **`.env.prod`** for Neon/Render. Both files are gitignored — **never commit them**.
 
-### `.env.local` (local Docker Postgres)
+### `.env.local` (local Postgres — use with Docker or Homebrew Postgres)
 
 ```properties
 DB_HOST=localhost
@@ -46,9 +126,13 @@ ANONYMOUS_USER_PASSWORD=any-internal-string
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-### `.env.prod` (Neon + Render)
+Use with **Option A** (Docker) and `./run-dev.sh`.
+
+### `.env.prod` (Neon + Render — also for local dev without Docker)
 
 Copy values from the [Neon dashboard](https://console.neon.tech) → **Connection details**. Set the same keys on Render → **Environment**.
+
+Use with **Option B** (no Docker) or production deploy.
 
 ```properties
 SPRING_PROFILES_ACTIVE=prod
@@ -85,26 +169,23 @@ If changes don't appear, do a full restart: `Ctrl+C` → `./run-dev.sh` again.
 
 ### Browse the database (web UI)
 
-Start **Adminer** — a simple web UI for PostgreSQL:
-
-```bash
-chmod +x start-db-ui.sh
-./start-db-ui.sh
-```
-
-Open **http://localhost:8081** and log in:
+**With Docker (Compose)** — `docker-compose up -d` starts Adminer on **http://localhost:8081**:
 
 | Field | Value |
 |-------|--------|
 | System | PostgreSQL |
-| Server | `mergefruit-db` (or `host.docker.internal` if that fails) |
+| Server | `postgres` |
 | Username | from `.env.local` → `DB_USER` |
 | Password | from `.env.local` → `DB_PASSWORD` |
 | Database | from `.env.local` → `DB_NAME` |
 
-Then click **users** or **scores** to browse tables, or run SQL in the **SQL command** tab.
+**With Docker (`docker run`)** — run `./start-db-ui.sh`, then open **http://localhost:8081** (Server: `mergefruit-db`).
 
-> Adminer runs on port **8081** so it doesn't conflict with the API on **8080**.
+**Without Docker** — use the [Neon Console](https://console.neon.tech) → **SQL Editor** (same data as Render).
+
+Then click **users** or **scores** to browse tables, or run SQL.
+
+> Adminer uses port **8081** so it doesn't conflict with the API on **8080**.
 
 > **Secrets:** All passwords and keys live in `.env.local` / `.env.prod` only (gitignored).
 
@@ -114,11 +195,15 @@ Then click **users** or **scores** to browse tables, or run SQL in the **SQL com
 
 ### Troubleshooting: `Connection to localhost:5432 refused`
 
-This means PostgreSQL is not running. Check in order:
+**If using Docker (Option A):**
 
 1. **Colima/Docker running?** `colima status` → if not, run `colima start`
 2. **Postgres container running?** `docker ps` → should show `mergefruit-db` on port 5432
-3. **Start Postgres** if missing (command above). If the container already exists but stopped: `docker start mergefruit-db`
+3. **Start Postgres:** `set -a && source .env.local && set +a && docker-compose up -d`
+4. **Port 5432 in use?** Stop other Postgres or change `DB_PORT` in `.env.local`
+5. **Old manual container?** `docker rm -f mergefruit-db`, then `docker-compose up -d`
+
+**If not using Docker (Option B):** you should not connect to `localhost:5432` — use `.env.prod` with Neon `DB_HOST` and `SPRING_PROFILES_ACTIVE=prod`.
 
 API base URL: `http://localhost:8080`
 
