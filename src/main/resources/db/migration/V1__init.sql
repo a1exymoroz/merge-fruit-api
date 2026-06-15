@@ -1,4 +1,4 @@
--- Run this manually or add Flyway later.
+-- Applied automatically by Flyway in production (SPRING_PROFILES_ACTIVE=prod).
 -- Indexes support fast leaderboard queries ordered by score.
 
 CREATE TABLE IF NOT EXISTS users (

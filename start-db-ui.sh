@@ -3,14 +3,14 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-if [[ ! -f .env ]]; then
-  echo "Missing backend/.env — run: cp .env.example .env"
+if [[ ! -f .env.local ]]; then
+  echo "Missing .env.local — run: cp .env.example .env.local"
   exit 1
 fi
 
 set -a
 # shellcheck disable=SC1091
-source .env
+source .env.local
 set +a
 
 if docker ps --format '{{.Names}}' | grep -q '^mergefruit-adminer$'; then
@@ -37,9 +37,9 @@ docker run -d --name mergefruit-adminer \
 echo ""
 echo "Database UI ready: http://localhost:8081"
 echo ""
-echo "Login with values from backend/.env:"
+echo "Login with values from .env.local:"
 echo "  System:   PostgreSQL"
 echo "  Server:   mergefruit-db   (or host.docker.internal if connection fails)"
 echo "  Username: $DB_USER"
-echo "  Password: (your DB_PASSWORD from .env)"
+echo "  Password: (your DB_PASSWORD from .env.local)"
 echo "  Database: $DB_NAME"

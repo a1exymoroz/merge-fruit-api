@@ -1,0 +1,11 @@
+target/
+.git/
+.env
+.env.*
+!.env.example
+*.md
+docs/
+postman/
+start-db-ui.sh
+run-dev.sh
+docker-compose.yml

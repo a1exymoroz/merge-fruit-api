@@ -87,7 +87,9 @@ This means PostgreSQL is not running. Check in order:
 
 API base URL: `http://localhost:8080`
 
-**New to Java + databases?** Read [How Java Connects to the DB](docs/HOW_JAVA_CONNECTS_TO_DB.md) for a step-by-step explanation of JDBC, HikariCP, JPA, and how a request reaches PostgreSQL.
+**New to Java + databases?** Read [How Java Connects to the DB](docs/HOW_JAVA_CONNECTS_TO_DB.md) for JDBC, HikariCP, JPA, and the request path. See [How Tables Are Created](docs/HOW_TABLES_ARE_CREATED.md) for local vs Neon (Flyway vs Hibernate).
+
+**Ready to go live?** See [Deploy to free hosting](docs/DEPLOY.md) (Render + Neon).
 
 ## What's implemented (study these)
 

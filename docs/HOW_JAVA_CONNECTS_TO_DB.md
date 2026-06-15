@@ -49,11 +49,13 @@ spring:
     password: ${DB_PASSWORD}
 ```
 
-Values come from `backend/.env` (gitignored). Copy `.env.example` → `.env` and set your secrets locally:
+Values come from `.env.local` (gitignored). Copy `.env.example` → `.env.local` and set your secrets locally:
 
 ```bash
-set -a && source .env && set +a
+set -a && source .env.local && set +a
 ```
+
+> **How were tables created on Neon?** See [How Tables Are Created](HOW_TABLES_ARE_CREATED.md) — local uses Hibernate `ddl-auto: update`; production uses Flyway migrations.
 
 **What happens at startup:**
 
@@ -249,12 +251,14 @@ JSON response returned to client
 |------|---------|
 | `pom.xml` | JDBC driver + JPA dependencies |
 | `application.yml` | DB URL, pool, Hibernate settings (secrets via env vars) |
-| `.env.example` | Template for local secrets — copy to `.env` |
+| `.env.example` | Template — copy to `.env.local` or `.env.prod` |
 | `application-dev.yml` | Dev overrides (`ddl-auto: update`, SQL logging) |
+| `application-prod.yml` | Prod: SSL, Flyway, `ddl-auto: validate` |
 | `entity/User.java`, `entity/Score.java` | Table mapping |
 | `repository/*.java` | Query interface (no SQL written by hand) |
 | `service/*.java` | Business logic + `@Transactional` |
-| `db/migration/V1__init.sql` | Manual schema + indexes (for production / Flyway later) |
+| `db/migration/V1__init.sql` | Flyway migration — creates tables on Neon |
+| [HOW_TABLES_ARE_CREATED.md](HOW_TABLES_ARE_CREATED.md) | Local vs prod schema creation explained |
 
 ---
 
