@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 if [[ ! -f .env.local ]]; then
-  echo "Missing .env.local — run: cp .env.example .env.local"
+  echo "Missing .env.local — create it (see README → Environment variables)"
   exit 1
 fi
 

@@ -5,22 +5,16 @@ Spring Boot backend for your React Merge Fruit game. This is a **50/50 learning 
 ## Quick start
 
 ```bash
-cd backend
+# 1. Create local secrets file (gitignored — never commit .env.local or .env.prod)
+#    See "Environment variables" below for what to put in the file.
 
-# 1. Create local secrets file (gitignored — never commit .env)
-cp .env.example .env
-# Edit .env — all three secrets are required:
-#   DB_PASSWORD=...              (must match Postgres container)
-#   JWT_SECRET=...               (min 32 characters)
-#   ANONYMOUS_USER_PASSWORD=...  (any internal string)
-
-# 2. Load env vars (needed for Docker; Maven loads .env automatically in dev)
-set -a && source .env && set +a
+# 2. Load env vars (needed for Docker)
+set -a && source .env.local && set +a
 
 # 3. Start Docker (Colima on macOS)
 colima start
 
-# 4. Start PostgreSQL (credentials from .env)
+# 4. Start PostgreSQL (credentials from .env.local)
 docker run -d --name mergefruit-db \
   -e POSTGRES_DB="$DB_NAME" \
   -e POSTGRES_USER="$DB_USER" \
@@ -28,10 +22,51 @@ docker run -d --name mergefruit-db \
   -p "${DB_PORT}:5432" \
   postgres:16-alpine
 
-# 5. Run the API — dev profile auto-loads .env and creates tables
+# 5. Run the API — dev profile loads .env.local and creates tables
 chmod +x run-dev.sh
 ./run-dev.sh
 ```
+
+## Environment variables
+
+Create **`.env.local`** for local development and **`.env.prod`** for Neon/Render. Both files are gitignored — **never commit them**.
+
+### `.env.local` (local Docker Postgres)
+
+```properties
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=mergefruit
+DB_USER=mergefruit
+DB_PASSWORD=your-local-password
+
+JWT_SECRET=your-random-string-at-least-32-characters-long
+ANONYMOUS_USER_PASSWORD=any-internal-string
+
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+### `.env.prod` (Neon + Render)
+
+Copy values from the [Neon dashboard](https://console.neon.tech) → **Connection details**. Set the same keys on Render → **Environment**.
+
+```properties
+SPRING_PROFILES_ACTIVE=prod
+
+DB_HOST=ep-xxxx.region.aws.neon.tech
+DB_PORT=5432
+DB_NAME=neondb
+DB_USER=your-neon-role
+DB_PASSWORD=your-neon-password
+
+JWT_SECRET=separate-prod-secret-at-least-32-characters
+ANONYMOUS_USER_PASSWORD=separate-prod-internal-string
+
+CORS_ALLOWED_ORIGINS=https://your-frontend.example.com,http://localhost:5173
+```
+
+> **Security:** Do not put real passwords or connection URLs in the repo, docs, or chat. If a secret was exposed, rotate it in Neon immediately (Dashboard → **Reset password**).
+
 
 ### Auto-restart on code changes (DevTools)
 
@@ -63,19 +98,19 @@ Open **http://localhost:8081** and log in:
 |-------|--------|
 | System | PostgreSQL |
 | Server | `mergefruit-db` (or `host.docker.internal` if that fails) |
-| Username | from `.env` → `DB_USER` |
-| Password | from `.env` → `DB_PASSWORD` |
-| Database | from `.env` → `DB_NAME` |
+| Username | from `.env.local` → `DB_USER` |
+| Password | from `.env.local` → `DB_PASSWORD` |
+| Database | from `.env.local` → `DB_NAME` |
 
 Then click **users** or **scores** to browse tables, or run SQL in the **SQL command** tab.
 
 > Adminer runs on port **8081** so it doesn't conflict with the API on **8080**.
 
-> **Secrets:** All passwords and keys live in `backend/.env` only.
+> **Secrets:** All passwords and keys live in `.env.local` / `.env.prod` only (gitignored).
 
 ### Troubleshooting: `WeakKeyException` / JWT key is 0 bits
 
-`JWT_SECRET` is empty or missing. Create `backend/.env` from `.env.example` and set `JWT_SECRET` to at least 32 characters.
+`JWT_SECRET` is empty or missing. Create `.env.local` (see **Environment variables** above) and set `JWT_SECRET` to at least 32 characters.
 
 ### Troubleshooting: `Connection to localhost:5432 refused`
 

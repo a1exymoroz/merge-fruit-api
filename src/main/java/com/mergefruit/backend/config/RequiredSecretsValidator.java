@@ -46,10 +46,9 @@ public class RequiredSecretsValidator {
                     %s
 
                     Fix:
-                    1. cd backend
-                    2. cp .env.example .env
-                    3. Fill in DB_PASSWORD, JWT_SECRET (32+ chars), ANONYMOUS_USER_PASSWORD
-                    4. Run with dev profile: SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
+                    1. Create .env.local (see README → Environment variables)
+                    2. Fill in DB_PASSWORD, JWT_SECRET (32+ chars), ANONYMOUS_USER_PASSWORD
+                    3. Run: ./run-dev.sh
                     """.formatted(String.join("\n", errors.stream().map(e -> "  - " + e).toList())));
         }
     }

@@ -49,7 +49,7 @@ spring:
     password: ${DB_PASSWORD}
 ```
 
-Values come from `.env.local` (gitignored). Copy `.env.example` → `.env.local` and set your secrets locally:
+Values come from `.env.local` (gitignored). Create the file using the templates in the project **README** → **Environment variables**:
 
 ```bash
 set -a && source .env.local && set +a
@@ -251,7 +251,7 @@ JSON response returned to client
 |------|---------|
 | `pom.xml` | JDBC driver + JPA dependencies |
 | `application.yml` | DB URL, pool, Hibernate settings (secrets via env vars) |
-| `.env.example` | Template — copy to `.env.local` or `.env.prod` |
+| `.env.local` / `.env.prod` | Secrets (gitignored) — templates in README |
 | `application-dev.yml` | Dev overrides (`ddl-auto: update`, SQL logging) |
 | `application-prod.yml` | Prod: SSL, Flyway, `ddl-auto: validate` |
 | `entity/User.java`, `entity/Score.java` | Table mapping |

@@ -235,13 +235,13 @@ PostgreSQL               ← localhost:5432 (local) or Neon host (prod, SSL)
 **Local** (`.env.local` → `application.yml`):
 
 ```
-jdbc:postgresql://localhost:5432/mergefruit-alex-123
+jdbc:postgresql://localhost:5432/mergefruit
 ```
 
 **Neon** (`.env.prod` → `application-prod.yml`):
 
 ```
-jdbc:postgresql://ep-dawn-glade-....neon.tech:5432/neondb?sslmode=require
+jdbc:postgresql://ep-xxxx.region.aws.neon.tech:5432/neondb?sslmode=require
 ```
 
 Same driver, same pool — only host and SSL differ.
