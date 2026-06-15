@@ -117,6 +117,26 @@ public class ScoreService {
     // 3. If request.score() != null, validate and update points
     // 4. Return ScoreResponse.from(saved)
 
+    public ScoreResponse updateScore(Long id, UpdateScoreRequest request, UserPrincipal principal) {
+        boolean isAdmin = principal.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        Score score = scoreRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Score not found"));
+
+        boolean isOwner = score.getUser().getId().equals(principal.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You are not allowed to update this score");
+        }
+        if (request.name() != null) {
+            score.setDisplayName(InputSanitizer.sanitizeDisplayName(request.name(), maxDisplayNameLength));
+        }
+        if (request.score() != null) {
+            score.setPoints(request.score());
+        }
+        scoreRepository.save(score);
+        return ScoreResponse.from(score);
+    }
+
     private User resolveScoreOwner() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {

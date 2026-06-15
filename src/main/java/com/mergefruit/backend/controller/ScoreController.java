@@ -100,6 +100,6 @@ public class ScoreController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateScoreRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        throw new UnsupportedOperationException("TODO: Implement updateScore — see ScoreService");
+        return scoreService.updateScore(id, request, principal);
     }
 }
