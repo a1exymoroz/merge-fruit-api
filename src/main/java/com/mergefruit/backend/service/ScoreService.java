@@ -96,7 +96,7 @@ public class ScoreService {
     // 2. Check ownership: score.getUser().getId().equals(principal.getId()) OR principal has ROLE_ADMIN
     // 3. scoreRepository.delete(score)
     // Hint: Follow submitScore() pattern for transaction boundaries.
-
+    @Transactional
     public void deleteScore(Long id, UserPrincipal principal) {
         boolean isAdmin = principal.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
         Score score = scoreRepository.findById(id)
@@ -116,7 +116,7 @@ public class ScoreService {
     // 2. If request.name() != null, sanitize and set display name
     // 3. If request.score() != null, validate and update points
     // 4. Return ScoreResponse.from(saved)
-
+    @Transactional
     public ScoreResponse updateScore(Long id, UpdateScoreRequest request, UserPrincipal principal) {
         boolean isAdmin = principal.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
         Score score = scoreRepository.findById(id)
@@ -127,6 +127,11 @@ public class ScoreService {
         if (!isAdmin && !isOwner) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You are not allowed to update this score");
         }
+
+        if (request.name() == null && request.score() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "At least one of name or score is required");
+        }
+        
         if (request.name() != null) {
             score.setDisplayName(InputSanitizer.sanitizeDisplayName(request.name(), maxDisplayNameLength));
         }

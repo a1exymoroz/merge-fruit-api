@@ -8,9 +8,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -47,7 +48,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final int requestsPerMinute;
     private final ObjectMapper objectMapper;
-    private final Map<String, AtomicInteger> requestCounts = new ConcurrentHashMap<>();
+    private final Map<String, List<Instant>> requestsByIp = new ConcurrentHashMap<>();
+    private final int windowDurationSeconds = 60;
 
     public RateLimitFilter(
             @Value("${app.rate-limit.requests-per-minute}") int requestsPerMinute,
@@ -62,15 +64,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        // TODO (Student): Implement proper sliding-window rate limiting.
-        // Current code is a placeholder that always allows requests.
+        int limit = "/api/auth/login".equals(request.getRequestURI()) ? 10 : this.requestsPerMinute;
         String clientIp = resolveClientIp(request);
-        requestCounts.computeIfAbsent(clientIp, key -> new AtomicInteger(0));
+        var now = Instant.now();
+        var windowStart = now.minusSeconds(windowDurationSeconds);
+        List<Instant> requests = requestsByIp.computeIfAbsent(clientIp, key -> new ArrayList<>());
+        synchronized (requests) {
+            requests.removeIf(timestamp -> timestamp.isBefore(windowStart));
+            if (requests.size() >= limit) {
+                response.setHeader("Retry-After", Integer.toString(windowDurationSeconds));
+                sendTooManyRequests(response, request);
+                return;
+            }
+            requests.add(now);
+        }
 
         filterChain.doFilter(request, response);
     }
 
-    @SuppressWarnings("unused")
     private void sendTooManyRequests(HttpServletResponse response, HttpServletRequest request) throws IOException {
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
