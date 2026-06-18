@@ -76,14 +76,20 @@ public class ScoreService {
         String displayName = InputSanitizer.sanitizeDisplayName(request.name(), maxDisplayNameLength);
         User owner = resolveScoreOwner();
 
-        Score score = new Score();
-        score.setUser(owner);
-        score.setDisplayName(displayName);
-        score.setPoints(request.score());
+        Score score = scoreRepository.findByUser_Id(owner.getId()).orElse(null);
+        if (score == null) {
+            score = new Score();
+            score.setUser(owner);
+            score.setDisplayName(displayName);
+            score.setPoints(request.score());
+        } else if (request.score() > score.getPoints()) {
+            score.setPoints(request.score());
+            score.setDisplayName(displayName);
+        }
+
         scoreRepository.save(score);
 
-        int rank = (int) scoreRepository.countByPointsGreaterThan(request.score()) + 1;
-
+        int rank = (int) scoreRepository.countByPointsGreaterThan(score.getPoints()) + 1;
         Page<Score> topScores = scoreRepository.findLeaderboard(PageRequest.of(0, 10));
         List<ScoreResponse> leaderboard = topScores.map(ScoreResponse::from).getContent();
 
