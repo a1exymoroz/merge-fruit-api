@@ -70,16 +70,6 @@ public class ScoreController {
         return scoreService.submitScore(request);
     }
 
-    // TODO (Student):
-    // Implement DELETE endpoint.
-    // Follow the pattern used in submitScore().
-    // Remember to validate ownership and handle exceptions.
-    //
-    // Hints:
-    // 1. Add @DeleteMapping("/{id}") method
-    // 2. Inject @AuthenticationPrincipal UserPrincipal principal
-    // 3. Call scoreService.deleteScore(id, principal)
-    // 4. Return 204 No Content on success
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteScore(
@@ -88,13 +78,6 @@ public class ScoreController {
         scoreService.deleteScore(id, principal);
     }
 
-    // TODO (Student):
-    // Implement PUT endpoint to update a score entry.
-    //
-    // Hints:
-    // 1. Add @PutMapping("/{id}") with @Valid @RequestBody UpdateScoreRequest
-    // 2. Call scoreService.updateScore(id, request, principal)
-    // 3. Return ScoreResponse
     @PutMapping("/{id}")
     public ScoreResponse updateScore(
             @PathVariable Long id,

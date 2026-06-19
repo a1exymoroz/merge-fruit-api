@@ -73,8 +73,8 @@ public class ScoreService {
 
     @Transactional
     public SubmitScoreResponse submitScore(SubmitScoreRequest request) {
-        String displayName = InputSanitizer.sanitizeDisplayName(request.name(), maxDisplayNameLength);
         User owner = resolveScoreOwner();
+        String displayName = resolveDisplayName(request, owner);
 
         Score score = scoreRepository.findByUser_Id(owner.getId()).orElse(null);
         if (score == null) {
@@ -146,6 +146,14 @@ public class ScoreService {
         }
         scoreRepository.save(score);
         return ScoreResponse.from(score);
+    }
+
+    private String resolveDisplayName(SubmitScoreRequest request, User owner) {
+        String rawName = request.name();
+        if (rawName == null || rawName.isBlank()) {
+            rawName = owner.getDisplayName();
+        }
+        return InputSanitizer.sanitizeDisplayName(rawName, maxDisplayNameLength);
     }
 
     private User resolveScoreOwner() {
