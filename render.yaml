@@ -36,3 +36,7 @@ services:
         sync: false
       - key: MAIL_ENABLED
         sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: API_BASE_URL
+        sync: false

@@ -85,3 +85,7 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # SMTP is optional — don't fail /actuator/health when Brevo creds are missing or down.
+    mail:
+      enabled: false
