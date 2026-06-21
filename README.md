@@ -124,9 +124,33 @@ JWT_SECRET=your-random-string-at-least-32-characters-long
 ANONYMOUS_USER_PASSWORD=any-internal-string
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173
+
+# Brevo SMTP (optional — for email verification later)
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USERNAME=your-brevo-smtp-login
+MAIL_PASSWORD=your-brevo-smtp-key
+MAIL_FROM=your-verified-email@example.com
+MAIL_ENABLED=false
 ```
 
 Use with **Option A** (Docker) and `./run-dev.sh`.
+
+### Brevo email (SMTP)
+
+1. Sign up at [brevo.com](https://www.brevo.com) → **SMTP & API** → create an **SMTP key** (this is `MAIL_PASSWORD`, not your Brevo account password).
+2. Copy the **SMTP login** (looks like `xxxx@smtp-brevo.com`) → `MAIL_USERNAME`.
+3. Set `MAIL_FROM` to a **verified sender** in Brevo (Senders & IP → add your email while learning).
+4. In `.env.local` set `MAIL_ENABLED=true` when ready to send.
+5. On Render, add the same `MAIL_*` variables to **Environment**.
+
+Test from code:
+
+```java
+emailService.sendPlainText("you@example.com", "Test", "Hello from Merge Fruit");
+```
+
+> Keep `MAIL_ENABLED=false` until `MAIL_PASSWORD` and `MAIL_FROM` are set — the app logs instead of sending.
 
 ### `.env.prod` (Neon + Render — also for local dev without Docker)
 

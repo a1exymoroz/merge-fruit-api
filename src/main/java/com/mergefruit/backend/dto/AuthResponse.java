@@ -14,9 +14,10 @@ public record AuthResponse(
         long expiresInMs,
         String email,
         String displayName,
-        String role
+        String role,
+        Boolean emailVerified
 ) {
-    public static AuthResponse of(String accessToken, long expiresInMs, String email, String displayName, String role) {
-        return new AuthResponse(accessToken, "Bearer", expiresInMs, email, displayName, role);
+    public static AuthResponse of(String accessToken, long expiresInMs, String email, String displayName, String role, Boolean emailVerified) {
+        return new AuthResponse(accessToken, "Bearer", expiresInMs, email, displayName, role, emailVerified);
     }
 }

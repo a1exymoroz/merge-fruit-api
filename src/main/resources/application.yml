@@ -33,6 +33,18 @@ spring:
       max-file-size: 1KB
       max-request-size: 2KB
 
+  mail:
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 server:
   port: ${PORT:8080}
   # Reject oversized HTTP headers — basic protection against malformed requests.
@@ -42,6 +54,8 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 3600000
+  auth:
+    verification-token-expiration-hours: 24
   anonymous-user:
     password: ${ANONYMOUS_USER_PASSWORD}
   cors:
@@ -51,6 +65,13 @@ app:
   scores:
     max-leaderboard-size: 100
     max-display-name-length: 20
+  mail:
+    from: ${MAIL_FROM:Merge Fruit <noreply@example.com>}
+    enabled: ${MAIL_ENABLED:false}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+  api:
+    base-url: ${API_BASE_URL:http://localhost:8080}
 
 logging:
   level:
