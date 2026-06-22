@@ -33,18 +33,6 @@ spring:
       max-file-size: 1KB
       max-request-size: 2KB
 
-  mail:
-    host: ${MAIL_HOST:smtp-relay.brevo.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
 server:
   port: ${PORT:8080}
   # Reject oversized HTTP headers — basic protection against malformed requests.
@@ -86,7 +74,3 @@ management:
   endpoint:
     health:
       show-details: never
-  health:
-    # SMTP is optional — don't fail /actuator/health when Brevo creds are missing or down.
-    mail:
-      enabled: false

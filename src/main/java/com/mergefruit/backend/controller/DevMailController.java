@@ -35,7 +35,7 @@ public class DevMailController {
         emailService.sendPlainText(
                 recipient,
                 "Merge Fruit — Brevo test",
-                "If you read this, SMTP is configured correctly.");
+                "If you read this, Brevo API is configured correctly.");
         return Map.of("status", "sent", "to", recipient);
     }
 

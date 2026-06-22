@@ -125,32 +125,29 @@ ANONYMOUS_USER_PASSWORD=any-internal-string
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 
-# Brevo SMTP (optional — for email verification later)
-MAIL_HOST=smtp-relay.brevo.com
-MAIL_PORT=587
-MAIL_USERNAME=your-brevo-smtp-login
-MAIL_PASSWORD=your-brevo-smtp-key
+# Brevo email (optional — for email verification)
+BREVO_API_KEY=your-brevo-api-key
 MAIL_FROM=your-verified-email@example.com
 MAIL_ENABLED=false
+FRONTEND_URL=http://localhost:5173
 ```
 
 Use with **Option A** (Docker) and `./run-dev.sh`.
 
-### Brevo email (SMTP)
+### Brevo email
 
-1. Sign up at [brevo.com](https://www.brevo.com) → **SMTP & API** → create an **SMTP key** (this is `MAIL_PASSWORD`, not your Brevo account password).
-2. Copy the **SMTP login** (looks like `xxxx@smtp-brevo.com`) → `MAIL_USERNAME`.
-3. Set `MAIL_FROM` to a **verified sender** in Brevo (Senders & IP → add your email while learning).
-4. In `.env.local` set `MAIL_ENABLED=true` when ready to send.
-5. On Render, add the same `MAIL_*` variables to **Environment**.
+1. Sign up at [brevo.com](https://www.brevo.com) → **SMTP & API** → **API keys** → create a key (starts with `xkeysib-`).
+2. Set `MAIL_FROM` to a **verified sender** in Brevo (Senders → add your email).
+3. In `.env.local` set `BREVO_API_KEY` and `MAIL_ENABLED=true`.
+4. On Render, add `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_ENABLED`, and `FRONTEND_URL` to **Environment**.
 
-Test from code:
+Test locally:
 
-```java
-emailService.sendPlainText("you@example.com", "Test", "Hello from Merge Fruit");
+```bash
+curl -X POST "http://localhost:8080/api/dev/test-email"
 ```
 
-> Keep `MAIL_ENABLED=false` until `MAIL_PASSWORD` and `MAIL_FROM` are set — the app logs instead of sending.
+> Keep `MAIL_ENABLED=false` until `BREVO_API_KEY` and `MAIL_FROM` are set — the app logs instead of sending.
 
 ### `.env.prod` (Neon + Render — also for local dev without Docker)
 

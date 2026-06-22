@@ -110,6 +110,10 @@ public class AuthService {
         User user = userRepository.findByEmailIgnoreCase(principal.getUsername())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
+        if (Boolean.FALSE.equals(user.getEmailVerified())) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Email not verified");
+        }
+
         return AuthResponse.of(
                 token,
                 jwtService.getExpirationMs(),
