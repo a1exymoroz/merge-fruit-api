@@ -105,15 +105,15 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.email().trim(), request.password()));
 
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-        String token = jwtService.generateToken(principal);
 
         User user = userRepository.findByEmailIgnoreCase(principal.getUsername())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
         if (Boolean.FALSE.equals(user.getEmailVerified())) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Email not verified");
+            throw new ApiException(HttpStatus.FORBIDDEN, "Email not verified");
         }
 
+        String token = jwtService.generateToken(principal);
         return AuthResponse.of(
                 token,
                 jwtService.getExpirationMs(),
