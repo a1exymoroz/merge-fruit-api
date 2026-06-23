@@ -228,7 +228,7 @@ Then click **users** or **scores** to browse tables, or run SQL.
 
 API base URL: `http://localhost:8080`
 
-**New to Java + databases?** Read [How Java Connects to the DB](docs/HOW_JAVA_CONNECTS_TO_DB.md) for JDBC, HikariCP, JPA, and the request path. See [How Tables Are Created](docs/HOW_TABLES_ARE_CREATED.md) for local vs Neon (Flyway vs Hibernate).
+**New to Java + databases?** Read [How Java Connects to the DB](docs/HOW_JAVA_CONNECTS_TO_DB.md) for JDBC, HikariCP, JPA, and the request path. See [How Tables Are Created](docs/HOW_TABLES_ARE_CREATED.md) for local vs Neon (Flyway vs Hibernate). For auth, see [How Passwords Are Stored](docs/HOW_PASSWORDS_ARE_STORED.md) and the [Technology Stack](docs/TECH_STACK.md).
 
 **Ready to go live?** See [Deploy to free hosting](docs/DEPLOY.md) (Render + Neon).
 
