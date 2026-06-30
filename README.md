@@ -141,12 +141,6 @@ Use with **Option A** (Docker) and `./run-dev.sh`.
 3. In `.env.local` set `BREVO_API_KEY` and `MAIL_ENABLED=true`.
 4. On Render, add `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_ENABLED`, and `FRONTEND_URL` to **Environment**.
 
-Test locally:
-
-```bash
-curl -X POST "http://localhost:8080/api/dev/test-email"
-```
-
 > Keep `MAIL_ENABLED=false` until `BREVO_API_KEY` and `MAIL_FROM` are set — the app logs instead of sending.
 
 ### `.env.prod` (Neon + Render — also for local dev without Docker)
