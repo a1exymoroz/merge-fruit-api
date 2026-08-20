@@ -226,5 +226,6 @@ This account exists for internal linking (scores → `user_id`), not for interac
 ## Related docs
 
 - [Technology Stack](TECH_STACK.md) — full project stack and auth layer diagrams
+- [How Keycloak Auth Works](HOW_KEYCLOAK_AUTH_WORKS.md) — the separate OAuth2 resource server auth path
 - [How Java Connects to the DB](HOW_JAVA_CONNECTS_TO_DB.md) — JPA, repositories, and the path to PostgreSQL
 - [How Tables Are Created](HOW_TABLES_ARE_CREATED.md) — Flyway migrations and the `users` table lifecycle

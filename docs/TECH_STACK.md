@@ -242,6 +242,7 @@ From `pom.xml`:
 ## Related docs
 
 - [How Passwords Are Stored](HOW_PASSWORDS_ARE_STORED.md) — BCrypt, signup/login detail
+- [How Keycloak Auth Works](HOW_KEYCLOAK_AUTH_WORKS.md) — the separate OAuth2 resource server path (`/api/whoami`)
 - [How Java Connects to the DB](HOW_JAVA_CONNECTS_TO_DB.md) — JDBC → JPA path
 - [How Tables Are Created](HOW_TABLES_ARE_CREATED.md) — Flyway vs Hibernate
 - [Deploy](DEPLOY.md) — Render + Neon setup
