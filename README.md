@@ -130,6 +130,9 @@ BREVO_API_KEY=your-brevo-api-key
 MAIL_FROM=your-verified-email@example.com
 MAIL_ENABLED=false
 FRONTEND_URL=http://localhost:5173
+
+# Keycloak (issuer for the OAuth2 resource server — see below)
+KEYCLOAK_ISSUER_URI=http://localhost:8081/realms/company
 ```
 
 Use with **Option A** (Docker) and `./run-dev.sh`.
@@ -142,6 +145,15 @@ Use with **Option A** (Docker) and `./run-dev.sh`.
 4. On Render, add `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_ENABLED`, and `FRONTEND_URL` to **Environment**.
 
 > Keep `MAIL_ENABLED=false` until `BREVO_API_KEY` and `MAIL_FROM` are set — the app logs instead of sending.
+
+### Keycloak resource server
+
+`GET /api/whoami` requires a Bearer access token issued by the `company` Keycloak realm, with an `aud` claim containing `backend-api` and roles under `realm_access.roles`. It's separate from the existing `/api/auth/*` JWT stack — see `KeycloakSecurityConfig`.
+
+```bash
+TOKEN=your-keycloak-access-token
+curl -s http://localhost:8080/api/whoami -H "Authorization: Bearer $TOKEN" | jq
+```
 
 ### `.env.prod` (Neon + Render — also for local dev without Docker)
 
@@ -222,7 +234,7 @@ Then click **users** or **scores** to browse tables, or run SQL.
 
 API base URL: `http://localhost:8080`
 
-**New to Java + databases?** Read [How Java Connects to the DB](docs/HOW_JAVA_CONNECTS_TO_DB.md) for JDBC, HikariCP, JPA, and the request path. See [How Tables Are Created](docs/HOW_TABLES_ARE_CREATED.md) for local vs Neon (Flyway vs Hibernate). For auth, see [How Passwords Are Stored](docs/HOW_PASSWORDS_ARE_STORED.md) and the [Technology Stack](docs/TECH_STACK.md).
+**New to Java + databases?** Read [How Java Connects to the DB](docs/HOW_JAVA_CONNECTS_TO_DB.md) for JDBC, HikariCP, JPA, and the request path. See [How Tables Are Created](docs/HOW_TABLES_ARE_CREATED.md) for local vs Neon (Flyway vs Hibernate). For auth, see [How Passwords Are Stored](docs/HOW_PASSWORDS_ARE_STORED.md), [How Keycloak Auth Works](docs/HOW_KEYCLOAK_AUTH_WORKS.md), and the [Technology Stack](docs/TECH_STACK.md).
 
 **Ready to go live?** See [Deploy to free hosting](docs/DEPLOY.md) (Render + Neon).
 
