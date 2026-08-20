@@ -25,7 +25,8 @@ For password-specific flow, see [How Passwords Are Stored](HOW_PASSWORDS_ARE_STO
 | Email | Brevo REST API (`RestClient`) |
 | Health checks | Spring Boot Actuator |
 | Local DB | Docker Compose (Postgres + Adminer) |
-| Production host | Render (Docker web service) |
+| Production host | Render (Docker web service) or Oracle Cloud (Compute VM + Caddy) |
+| Container image | Multi-stage Docker build → jlink custom JRE on Alpine |
 | Production DB | Neon (managed PostgreSQL) |
 | Frontend (separate repo) | React + Vite (typical dev port `5173`) |
 
@@ -208,6 +209,8 @@ Dependencies declared in `pom.xml`; tests use H2 in-memory (`scope: test`).
 
 ## Production stack
 
+Two deployment targets, both built from the same `Dockerfile` and pointed at the same Neon database:
+
 ```
 Render Web Service (Docker)
     → SPRING_PROFILES_ACTIVE=prod
@@ -216,7 +219,15 @@ Render Web Service (Docker)
     → Brevo for outbound email
 ```
 
-Defined in `render.yaml`. See [Deploy to free hosting](DEPLOY.md).
+```
+GitHub Actions (push to main)
+    → Build image, push to GitHub Container Registry (ghcr.io)
+    → SSH into OCI Compute VM → docker compose pull && up -d
+    → Caddy (auto HTTPS via sslip.io) → app :8080
+    → Neon PostgreSQL + Brevo, same as above
+```
+
+Defined in `render.yaml` and `docker-compose.prod.yml` / `.github/workflows/deploy.yml` respectively. See [Deploy to free hosting](DEPLOY.md).
 
 ---
 
@@ -244,4 +255,4 @@ From `pom.xml`:
 - [How Passwords Are Stored](HOW_PASSWORDS_ARE_STORED.md) — BCrypt, signup/login detail
 - [How Java Connects to the DB](HOW_JAVA_CONNECTS_TO_DB.md) — JDBC → JPA path
 - [How Tables Are Created](HOW_TABLES_ARE_CREATED.md) — Flyway vs Hibernate
-- [Deploy](DEPLOY.md) — Render + Neon setup
+- [Deploy](DEPLOY.md) — Render + Neon setup, and Oracle Cloud (Always Free) setup
