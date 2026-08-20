@@ -145,9 +145,137 @@ To reduce cold starts without paying:
 | **Render + Neon** | Simple Docker deploy, good docs | Cold starts on free tier |
 | **Railway** | Very easy UI | ~$5/month credit; may run out |
 | **Fly.io** | Good Docker support | Requires credit card for verification |
-| **Oracle Cloud Always Free** | Full VM, no sleep | More setup (Docker + systemd) |
+| **Oracle Cloud Always Free** | Full VM, no sleep | More setup (Docker + Caddy); see below |
 
 The repo includes a `Dockerfile` that works on any of these platforms.
+
+---
+
+## Deploy to Oracle Cloud (Always Free) — reference
+
+This repo also runs on an OCI Always Free Compute VM, with the API and a Caddy reverse proxy (automatic HTTPS) in `docker-compose.prod.yml`, still pointed at the same Neon database. GitHub Actions builds the image, pushes it to GitHub Container Registry, and redeploys the VM on every push to `main` (`.github/workflows/deploy.yml`).
+
+This section documents the actual commands used to set it up, for reference if it ever needs to be rebuilt. Replace bracketed placeholders with your own values; none of the commands below embed secrets.
+
+### 1. Install and authenticate the OCI CLI
+
+```powershell
+# Official Oracle installer (Windows)
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.ps1" -OutFile install.ps1
+powershell -ExecutionPolicy Bypass -File install.ps1 -AcceptAllDefaults
+```
+
+> On Windows, `oci-cli` ships very long file paths (help-text data files) and will fail to install unless [NTFS long paths are enabled](https://pip.pypa.io/warnings/enable-long-paths) (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`, admin required). It also needs Python with prebuilt wheels available (a brand-new Python release without wheels yet for a dependency like PyYAML will fail to build) — a slightly older stable Python (e.g. 3.12) avoids that.
+
+Browser-based login (no manual API key upload needed):
+
+```bash
+oci session authenticate --region <region, e.g. eu-frankfurt-1> --profile-name DEFAULT
+```
+
+This opens a browser to sign in, then writes `~/.oci/config`. All commands below use `--auth security_token`.
+
+### 2. Networking (VCN, public subnet, security list)
+
+```bash
+TENANCY="<tenancy-ocid>"
+
+VCN_ID=$(oci network vcn create --compartment-id "$TENANCY" --cidr-block "10.20.0.0/16" \
+  --display-name "mergefruit-vcn" --dns-label "mergefruit" --auth security_token \
+  --wait-for-state AVAILABLE --query "data.id" --raw-output)
+
+IGW_ID=$(oci network internet-gateway create --compartment-id "$TENANCY" --vcn-id "$VCN_ID" \
+  --is-enabled true --display-name "mergefruit-igw" --auth security_token \
+  --wait-for-state AVAILABLE --query "data.id" --raw-output)
+
+RT_ID=$(oci network vcn get --vcn-id "$VCN_ID" --auth security_token --query "data.\"default-route-table-id\"" --raw-output)
+SL_ID=$(oci network vcn get --vcn-id "$VCN_ID" --auth security_token --query "data.\"default-security-list-id\"" --raw-output)
+
+# Default route -> internet gateway
+oci network route-table update --rt-id "$RT_ID" --force --auth security_token \
+  --route-rules "[{\"destination\":\"0.0.0.0/0\",\"destinationType\":\"CIDR_BLOCK\",\"networkEntityId\":\"$IGW_ID\"}]"
+
+# Only open 22 (SSH), 80, 443 — the app port (8080) stays internal, behind Caddy
+oci network security-list update --security-list-id "$SL_ID" --force --auth security_token \
+  --ingress-security-rules '[
+    {"source":"0.0.0.0/0","protocol":"6","isStateless":false,"tcpOptions":{"destinationPortRange":{"min":22,"max":22}}},
+    {"source":"0.0.0.0/0","protocol":"6","isStateless":false,"tcpOptions":{"destinationPortRange":{"min":80,"max":80}}},
+    {"source":"0.0.0.0/0","protocol":"6","isStateless":false,"tcpOptions":{"destinationPortRange":{"min":443,"max":443}}}
+  ]' \
+  --egress-security-rules '[{"destination":"0.0.0.0/0","protocol":"all","isStateless":false}]'
+
+SUBNET_ID=$(oci network subnet create --compartment-id "$TENANCY" --vcn-id "$VCN_ID" \
+  --cidr-block "10.20.0.0/24" --display-name "mergefruit-public-subnet" --dns-label "public" \
+  --route-table-id "$RT_ID" --security-list-ids "[\"$SL_ID\"]" --prohibit-public-ip-on-vnic false \
+  --auth security_token --wait-for-state AVAILABLE --query "data.id" --raw-output)
+```
+
+### 3. Compute instance
+
+Always Free Ampere A1 (`VM.Standard.A1.Flex`) is frequently out of capacity in busy regions — worth trying each availability domain, and falling back to the AMD `VM.Standard.E2.1.Micro` shape (smaller: 1 OCPU / 1GB RAM, but a separate capacity pool that's often available when A1 isn't):
+
+```bash
+ssh-keygen -t ed25519 -f ./deploy_key -N "" -C "mergefruit-oci-deploy"
+
+# cloud-init.yml — installs Docker + Compose plugin on first boot (see repo history / ask for a copy)
+
+IMAGE_ID=$(oci compute image list --compartment-id "$TENANCY" \
+  --operating-system "Canonical Ubuntu" --operating-system-version "22.04" \
+  --shape "VM.Standard.E2.1.Micro" --auth security_token \
+  --query "data[0].id" --raw-output)
+
+oci compute instance launch \
+  --compartment-id "$TENANCY" \
+  --availability-domain "<AD, e.g. xxxx:EU-FRANKFURT-1-AD-1>" \
+  --shape "VM.Standard.E2.1.Micro" \
+  --image-id "$IMAGE_ID" \
+  --subnet-id "$SUBNET_ID" \
+  --assign-public-ip true \
+  --display-name "mergefruit-api-vm" \
+  --metadata "{\"ssh_authorized_keys\":\"$(cat ./deploy_key.pub)\"}" \
+  --user-data-file ./cloud-init.yml \
+  --auth security_token \
+  --wait-for-state RUNNING
+```
+
+Reserved public IPs require a paid (non-trial) OCI account (`LimitExceeded: reserved-public-ip-count`) — the instance's **ephemeral** public IP is used instead, which stays fixed across reboots (only changes if the instance is terminated).
+
+On a 1GB-RAM shape, add swap and cap the JVM heap:
+
+```bash
+ssh -i deploy_key ubuntu@<vm-ip> '
+  sudo fallocate -l 1G /swapfile && sudo chmod 600 /swapfile
+  sudo mkswap /swapfile && sudo swapon /swapfile
+  echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+'
+```
+
+`docker-compose.prod.yml` sets `JAVA_TOOL_OPTIONS: "-Xmx384m -Xss256k -XX:MaxMetaspaceSize=128m"` on the `app` service accordingly.
+
+### 4. Container registry
+
+**OCI Container Registry (OCIR) requires a paid/upgraded account** even for free-tier usage (`FREE_TIER_NOT_SUPPORTED`). This deployment uses **GitHub Container Registry** (`ghcr.io/a1exymoroz/merge-fruit-api`) instead — `.github/workflows/deploy.yml` pushes there using the workflow's built-in `GITHUB_TOKEN` (no extra registry secret needed).
+
+### 5. TLS / domain
+
+No domain was registered, so [sslip.io](https://sslip.io) is used — a free wildcard DNS service with no signup: `<ip-with-dashes>.sslip.io` resolves straight to the VM's IP, which is enough for Caddy (`Caddyfile`) to obtain a Let's Encrypt certificate automatically.
+
+### 6. First-time VM setup + GitHub Actions
+
+```bash
+scp -i deploy_key docker-compose.prod.yml Caddyfile .env.prod ubuntu@<vm-ip>:/opt/mergefruit/
+
+gh secret set VM_HOST --body "<vm-ip>" --repo a1exymoroz/merge-fruit-api
+gh secret set VM_SSH_KEY < ./deploy_key --repo a1exymoroz/merge-fruit-api
+```
+
+From then on, every push to `main` builds the image, pushes it to `ghcr.io`, and SSHes into the VM to `docker compose pull && up -d` (see `.github/workflows/deploy.yml`).
+
+### Verify
+
+```bash
+curl https://<ip-with-dashes>.sslip.io/actuator/health
+```
 
 ---
 

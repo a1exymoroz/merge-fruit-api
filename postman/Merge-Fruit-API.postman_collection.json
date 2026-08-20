@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Merge Fruit API",
-    "description": "Spring Boot backend for the Merge Fruit game.\n\n## Setup\n1. Import this collection and `local.postman_environment.json`\n2. Select the **Merge Fruit — Local** environment\n3. Start the backend: `./run-dev.sh`\n4. Run **Sign Up** or **Login** — the access token is saved automatically\n5. Use the Scores requests (POST requires a JSON body)",
+    "description": "Spring Boot backend for the Merge Fruit game.\n\n## Setup\n1. Import this collection and an environment file (`local.postman_environment.json` or `oracle.postman_environment.json`)\n2. Select the **Merge Fruit — Local** environment (start the backend first: `./run-dev.sh`) or the **Merge Fruit — Oracle Cloud** environment to hit the live deployment\n3. Run **Sign Up** or **Login** — the access token is saved automatically\n4. Use the Scores requests (POST requires a JSON body)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
