@@ -29,7 +29,7 @@ RUN jlink \
       --strip-debug \
       --compress=2 \
       --module-path "$JAVA_HOME/jmods" \
-      --add-modules "$(cat /tmp/modules.txt)" \
+      --add-modules "$(cat /tmp/modules.txt),jdk.crypto.ec" \
       --output /customjre
 
 # Bare Alpine base instead of a general-purpose JRE image — the custom JRE above
