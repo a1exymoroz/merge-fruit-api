@@ -1,6 +1,7 @@
 package com.mergefruit.backend.service;
 
 import com.mergefruit.backend.dto.AuthResponse;
+import com.mergefruit.backend.dto.ClientPlatform;
 import com.mergefruit.backend.dto.LoginRequest;
 import com.mergefruit.backend.dto.SignUpRequest;
 import com.mergefruit.backend.entity.EmailVerificationToken;
@@ -70,7 +71,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse signUp(SignUpRequest request) {
+    public AuthResponse signUp(SignUpRequest request, ClientPlatform platform) {
         if (userRepository.existsByEmailIgnoreCase(request.email())) {
             throw new ApiException(HttpStatus.CONFLICT, "Email already registered");
         }
@@ -86,7 +87,7 @@ public class AuthService {
 
         EmailVerificationToken verificationToken = createVerificationToken(user);
         emailService.sendVerificationEmail(
-                user.getEmail(), verificationToken.getToken(), verificationToken.getCode());
+                user.getEmail(), verificationToken.getToken(), verificationToken.getCode(), platform);
 
         UserPrincipal principal = new UserPrincipal(user);
         String accessToken = jwtService.generateToken(principal);

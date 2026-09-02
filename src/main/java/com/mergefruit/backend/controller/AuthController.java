@@ -1,6 +1,7 @@
 package com.mergefruit.backend.controller;
 
 import com.mergefruit.backend.dto.AuthResponse;
+import com.mergefruit.backend.dto.ClientPlatform;
 import com.mergefruit.backend.dto.LoginRequest;
 import com.mergefruit.backend.dto.SignUpRequest;
 import com.mergefruit.backend.service.AuthService;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -48,8 +50,10 @@ public class AuthController {
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse signUp(@Valid @RequestBody SignUpRequest request) {
-        return authService.signUp(request);
+    public AuthResponse signUp(
+            @Valid @RequestBody SignUpRequest request,
+            @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
+        return authService.signUp(request, ClientPlatform.fromHeader(clientPlatform));
     }
 
     @PostMapping("/login")
