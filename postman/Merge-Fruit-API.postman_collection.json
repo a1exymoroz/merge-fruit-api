@@ -45,6 +45,11 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Client-Platform",
+                "value": "web",
+                "description": "web | android | ios — picks the verify-email link template. Optional; defaults to web."
               }
             ],
             "body": {

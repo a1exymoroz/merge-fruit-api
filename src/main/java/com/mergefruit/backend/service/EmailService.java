@@ -1,5 +1,6 @@
 package com.mergefruit.backend.service;
 
+import com.mergefruit.backend.dto.ClientPlatform;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -20,7 +21,9 @@ import org.springframework.web.client.RestClient;
    BREVO_API_KEY — Brevo → SMTP & API → API keys (starts with xkeysib-)
    MAIL_FROM — verified sender in Brevo
    MAIL_ENABLED=true
-   FRONTEND_URL — verify link in emails points at the React app
+   VERIFY_LINK_WEB / VERIFY_LINK_ANDROID / VERIFY_LINK_IOS — per-platform verify
+     link templates; "{token}" is replaced with the verification token. Which one
+     is used depends on the X-Client-Platform header the client sent to /signup.
 */
 @Service
 public class EmailService {
@@ -32,24 +35,29 @@ public class EmailService {
     private final String brevoApiKey;
     private final String fromAddress;
     private final boolean enabled;
-    private final String frontendUrl;
+    private final Map<ClientPlatform, String> verifyLinkTemplates;
 
     public EmailService(
             RestClient.Builder restClientBuilder,
             @Value("${app.mail.brevo-api-key:}") String brevoApiKey,
             @Value("${app.mail.from}") String fromAddress,
             @Value("${app.mail.enabled:false}") boolean enabled,
-            @Value("${app.frontend.url:http://localhost:5173}") String frontendUrl) {
+            @Value("${app.verification.link.web}") String webVerifyLink,
+            @Value("${app.verification.link.android}") String androidVerifyLink,
+            @Value("${app.verification.link.ios}") String iosVerifyLink) {
         this.brevoClient = restClientBuilder.build();
         this.brevoApiKey = brevoApiKey == null ? "" : brevoApiKey.trim();
         this.fromAddress = fromAddress;
         this.enabled = enabled;
-        this.frontendUrl = frontendUrl.replaceAll("/$", "");
+        this.verifyLinkTemplates = Map.of(
+                ClientPlatform.WEB, webVerifyLink,
+                ClientPlatform.ANDROID, androidVerifyLink,
+                ClientPlatform.IOS, iosVerifyLink);
     }
 
     public void sendPlainText(String to, String subject, String body) {
         if (!enabled) {
-            log.info("Mail disabled (MAIL_ENABLED=false). Would send to {}: {}", to, subject);
+            log.info("Mail disabled (MAIL_ENABLED=false). Would send to {}: {}\n{}", to, subject, body);
             return;
         }
         if (brevoApiKey.isBlank()) {
@@ -75,8 +83,10 @@ public class EmailService {
         log.info("Sent email to {}", to);
     }
 
-    public void sendVerificationEmail(String to, String token, String code) {
-        String verifyUrl = frontendUrl + "/verify?token=" + token;
+    public void sendVerificationEmail(String to, String token, String code, ClientPlatform platform) {
+        String template = verifyLinkTemplates.getOrDefault(
+                platform, verifyLinkTemplates.get(ClientPlatform.WEB));
+        String verifyUrl = template.replace("{token}", token);
         String subject = "Verify your email";
         String body = """
                 Open this link to verify your email:

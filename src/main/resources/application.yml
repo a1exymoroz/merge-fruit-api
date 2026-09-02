@@ -61,6 +61,13 @@ app:
     url: ${FRONTEND_URL:http://localhost:5173}
   api:
     base-url: ${API_BASE_URL:http://localhost:8080}
+  verification:
+    # Verify-link templates chosen by the X-Client-Platform header on POST /api/auth/signup.
+    # "{token}" is replaced with the email verification token. Missing/unknown header -> web.
+    link:
+      web: ${VERIFY_LINK_WEB:${app.frontend.url}/verify?token={token}}
+      android: ${VERIFY_LINK_ANDROID:mergefruit://verify?token={token}}
+      ios: ${VERIFY_LINK_IOS:mergefruit://verify?token={token}}
 
 logging:
   level:

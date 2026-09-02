@@ -143,6 +143,19 @@ Use with **Option A** (Docker) and `./run-dev.sh`.
 
 > Keep `MAIL_ENABLED=false` until `BREVO_API_KEY` and `MAIL_FROM` are set — the app logs instead of sending.
 
+#### Per-client verify link
+
+The verification email's link depends on the `X-Client-Platform` header sent to `POST /api/auth/signup`
+(`web` / `android` / `ios`; missing or unknown ⇒ `web`). Templates (`{token}` is substituted):
+
+| Env var | Default | Used when header is |
+| --- | --- | --- |
+| `VERIFY_LINK_WEB` | `${FRONTEND_URL}/verify?token={token}` | `web` |
+| `VERIFY_LINK_ANDROID` | `mergefruit://verify?token={token}` | `android` |
+| `VERIFY_LINK_IOS` | `mergefruit://verify?token={token}` | `ios` |
+
+Override any of them on Render → **Environment** if the defaults don't match your app's deep-link scheme.
+
 ### `.env.prod` (Neon + Render — also for local dev without Docker)
 
 Copy values from the [Neon dashboard](https://console.neon.tech) → **Connection details**. Set the same keys on Render → **Environment**.
